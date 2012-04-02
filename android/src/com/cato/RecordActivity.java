@@ -24,8 +24,13 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -138,17 +143,21 @@ public class RecordActivity extends Activity {
   	private class SendAudioTask extends AsyncTask<URL, Integer, String> {
 		@Override
 		protected String doInBackground(URL... params) {
+			if (true) {
+				return doFileUpload();
+			}
+			
 			HttpClient httpclient = new DefaultHttpClient();
-		    HttpPost httppost = new HttpPost("http://glowing-mountain-5425.herokuapp.com/search/tag");
+		    HttpPost httppost = new HttpPost("http://10.0.2.2:8080/tag/dmitry");
 		    
 		    String result = "";
 		    
 		    try {
 		        // Add your data
 		        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-		        nameValuePairs.add(new BasicNameValuePair("name", "Dmitry"));
+		        //nameValuePairs.add(new BasicNameValuePair("name", "Dmitry"));
 		        //nameValuePairs.add(new BasicNameValuePair("stringdata", "AndDev is Cool!"));
-		        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+		        //httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
 		        // Execute HTTP Post Request
 		        HttpResponse response = httpclient.execute(httppost);
@@ -173,22 +182,7 @@ public class RecordActivity extends Activity {
 		    } catch (IOException e) {
 		        e.printStackTrace();
 		    }
- 			//JSONRPCClient client = JSONRPCClient.create("http://:5000");
-			//JSONRPCClient client = JSONRPCClient.create("http://glowing-mountain-5425.herokuapp.com/search/");
-			//client.setConnectionTimeout(2000);
- 			//client.setSoTimeout(2000);
- 			
- 			
-// 			try {
-// 				client.callJSONObject("tag");
-// 				//client.call("tag");
-//				//result = client.callString("tag");
-// 			}
-// 			catch (JSONRPCException e) {
-// 				e.printStackTrace();
-//				result = "Cannot connect to server...";
-// 			}
-//			
+
 			return result;
 		}
   		
@@ -206,6 +200,90 @@ public class RecordActivity extends Activity {
 			  alert.show(); 		
 		}
   	}
+  	
+  	private String doFileUpload() {
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;
+        DataInputStream inStream = null;
+        String existingFileName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/pompo_boost_sped.mp3";
+        String lineEnd = "\r\n";
+        String twoHyphens = "--";
+        String boundary =  "*****";
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1*1024*1024;
+        String responseFromServer = "";
+        String urlString = "http://10.0.2.2:8080/tag/dmitry";
+        try
+        {
+         //------------------ CLIENT REQUEST
+        FileInputStream fileInputStream = new FileInputStream(new File(existingFileName) );
+         // open a URL connection to the Servlet
+         URL url = new URL(urlString);
+         // Open a HTTP connection to the URL
+         conn = (HttpURLConnection) url.openConnection();
+         // Allow Inputs
+         conn.setDoInput(true);
+         // Allow Outputs
+         conn.setDoOutput(true);
+         // Don't use a cached copy.
+         conn.setUseCaches(false);
+         // Use a post method.
+         conn.setRequestMethod("POST");
+         conn.setRequestProperty("Connection", "Keep-Alive");
+         conn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+         dos = new DataOutputStream( conn.getOutputStream() );
+         dos.writeBytes(twoHyphens + boundary + lineEnd);
+         dos.writeBytes("Content-Disposition: form-data; name=\"uploadedfile\";filename=\"" + existingFileName + "\"" + lineEnd);
+         dos.writeBytes(lineEnd);
+         // create a buffer of maximum size
+         bytesAvailable = fileInputStream.available();
+         bufferSize = Math.min(bytesAvailable, maxBufferSize);
+         buffer = new byte[bufferSize];
+         // read file and write it into form...
+         bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+         while (bytesRead > 0)
+         {
+          dos.write(buffer, 0, bufferSize);
+          bytesAvailable = fileInputStream.available();
+          bufferSize = Math.min(bytesAvailable, maxBufferSize);
+          bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+         }
+         // send multipart form data necesssary after file data...
+         dos.writeBytes(lineEnd);
+         dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+         // close streams
+         Log.e("Debug","File is written");
+         fileInputStream.close();
+         dos.flush();
+         dos.close();
+        }
+        catch (MalformedURLException ex)
+        {
+             Log.e("Debug", "error: " + ex.getMessage(), ex);
+        }
+        catch (IOException ioe)
+        {
+             Log.e("Debug", "error: " + ioe.getMessage(), ioe);
+        }
+        //------------------ read the SERVER RESPONSE
+        try {
+              inStream = new DataInputStream ( conn.getInputStream() );
+              String str;
+
+              while ((str = inStream.readLine()) != null) {
+                   Log.e("Debug", "Server Response " + str);
+              }
+              inStream.close();
+              
+              return str;
+
+        } catch (IOException ioex) {
+             Log.e("Debug", "error: " + ioex.getMessage(), ioex);
+        }
+        
+        return "Error processing request.";
+      }
   	
 	private void sendAudio() {
 		
