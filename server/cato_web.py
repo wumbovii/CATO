@@ -1,5 +1,12 @@
 import web
 import audio
+from pymongo import Connection
+
+connection = Connection('mongodb://admin:sync2200@staff.mongohq.com:10068/synced')
+db = connection['synced']
+config = db['config'].find_one()
+idx_count = config['idx_count']
+tracks = db['mixes']
 
 urls = (
     '/', 'index',
@@ -26,9 +33,9 @@ class tag:
         fout.write(data['uploadedfile'])
         fout.close()
         
-        result = audio.classify(destination_path)[0][1].split('_')[0]
-        
-        return result
+        result = audio.classify(destination_path)
+        web.debug(result)
+        return result[0][1].split('_')[0]
 
 if __name__ == "__main__":
     app = web.application(urls, globals())

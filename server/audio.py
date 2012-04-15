@@ -117,8 +117,8 @@ def classify(file_name):
         heapq.heappush(h0, (probs[0], key))
         heapq.heappush(h1, (probs[1], key))
 
-
     return h1
+
 #    k = 300
 #    for _ in xrange(k):
 #        print heapq.heappop(h0), " : ", heapq.heappop(h1)
@@ -132,4 +132,4 @@ track_names = [("PowerFrancers - Pompo Nelle Casse (PullS Remix)",      training
 
  
 #train(track_names)  
-print classify("uploads/pompo_boost_sped.mp3")
+#print classify("uploads/pompo_boost_sped.mp3")
